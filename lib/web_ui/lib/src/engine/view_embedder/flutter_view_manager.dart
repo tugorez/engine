@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'dart:async';
@@ -6,7 +6,20 @@ import 'package:ui/src/engine.dart';
 
 /// Encapsulates view objects, and their optional metadata indexed by `viewId`.
 class FlutterViewManager {
-  FlutterViewManager(this._dispatcher);
+  FlutterViewManager(this._dispatcher) {
+    FocusBinding.instance.onFlutterViewFocusChange.listen((focusBindingChange) {
+      final flutterViewId = focusBindingChange.flutterViewId;
+      final focusDirection = focusBindingChange.focusDirection;
+
+      for (final view in views) {
+        if (view.viewId == flutterViewId) {
+          view.markAsFocused(direction: focusDirection == FocusDirection.backwards);
+        } else {
+          view.markAsUnfocused();
+        }
+      }
+    });
+  }
 
   final EnginePlatformDispatcher _dispatcher;
 
