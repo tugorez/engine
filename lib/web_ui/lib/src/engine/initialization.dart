@@ -224,6 +224,7 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
+  FocusBinding.instance.initialize();
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   KeyboardBinding.initInstance();
 

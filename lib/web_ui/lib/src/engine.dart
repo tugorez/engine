@@ -59,6 +59,7 @@ export 'engine/display.dart';
 export 'engine/dom.dart';
 export 'engine/embedder.dart';
 export 'engine/engine_canvas.dart';
+export 'engine/focus_binding.dart';
 export 'engine/font_change_util.dart';
 export 'engine/font_fallback_data.dart';
 export 'engine/font_fallbacks.dart';
