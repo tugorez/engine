@@ -10,13 +10,14 @@ class FlutterViewManager {
     FocusBinding.instance.onFlutterViewFocusChange.listen((focusBindingChange) {
       final flutterViewId = focusBindingChange.flutterViewId;
       final focusDirection = focusBindingChange.focusDirection;
-
-      for (final view in views) {
-        if (view.viewId == flutterViewId) {
-          view.markAsFocused(direction: focusDirection == FocusDirection.backwards);
-        } else {
+      if (flutterViewId == null) {
+        for (final view in views) {
           view.markAsUnfocused();
         }
+      } else {
+        views.singleWhere((view) => view.viewId == flutterViewId).markAsFocused(
+          direction: focusDirection == FocusDirection.backwards
+        );
       }
     });
   }
