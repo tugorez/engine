@@ -2,11 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:ui/src/engine.dart';
 
 /// Encapsulates view objects, and their optional metadata indexed by `viewId`.
 class FlutterViewManager {
-  FlutterViewManager(this._dispatcher);
+  FlutterViewManager(this._dispatcher) {
+    print('juanjo 0');
+    (() async {
+      await Future.delayed(Duration(seconds: 1));
+      _dispatcher.invokeOnFocusState(ui.FocusState(flutterViewId: -1));
+    })();
+  }
 
   final EnginePlatformDispatcher _dispatcher;
 
@@ -39,6 +46,8 @@ class FlutterViewManager {
   EngineFlutterView createAndRegisterView(
     JsFlutterViewOptions jsViewOptions,
   ) {
+    print('juanjo 1');
+
     final EngineFlutterView view =
         EngineFlutterView(_dispatcher, jsViewOptions.hostElement);
     registerView(view, jsViewOptions: jsViewOptions);
@@ -52,6 +61,8 @@ class FlutterViewManager {
     EngineFlutterView view, {
     JsFlutterViewOptions? jsViewOptions,
   }) {
+    print('juanjo 2');
+
     final int viewId = view.viewId;
     assert(!_viewData.containsKey(viewId)); // Adding the same view twice?
 
@@ -61,6 +72,7 @@ class FlutterViewManager {
       _jsViewOptions[viewId] = jsViewOptions;
     }
     _onViewCreatedController.add(viewId);
+
 
     return view;
   }

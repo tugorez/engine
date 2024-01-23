@@ -114,6 +114,28 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     viewManager.dispose();
   }
 
+  @override
+  ui.FocusStateCallback? get onFocusState => _onFocusStateCallback;
+
+  ui.FocusStateCallback? _onFocusStateCallback;
+  Zone? _onFocusStateCallbackZone;
+
+  @override
+  set onFocusState(ui.FocusStateCallback? callback) {
+    _onFocusStateCallback = callback;
+    _onFocusStateCallbackZone = Zone.current;
+  }
+
+  void invokeOnFocusState(ui.FocusState focusState) {
+    if (_onFocusStateCallback == null) return;
+
+    invoke1<ui.FocusState>(
+      _onFocusStateCallback,
+      _onFocusStateCallbackZone,
+      focusState,
+    );
+  }
+
   /// Receives all events related to platform configuration changes.
   @override
   ui.VoidCallback? get onPlatformConfigurationChanged =>

@@ -15,6 +15,14 @@ typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
+typedef FocusStateCallback = void Function(FocusState focusState);
+
+class FocusState {
+  final int flutterViewId;
+
+  FocusState({ required this.flutterViewId });
+}
+
 // ignore: avoid_classes_with_only_static_members
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -54,6 +62,10 @@ abstract class PlatformDispatcher {
 
   TimingsCallback? get onReportTimings;
   set onReportTimings(TimingsCallback? callback);
+
+  FocusStateCallback? get onFocusState;
+  set onFocusState(FocusStateCallback? callback);
+
 
   void sendPlatformMessage(
       String name,
