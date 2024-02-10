@@ -69,6 +69,9 @@ class DomManager {
     // with the platform view, the platform view will be reachable.
     rootElement.appendChild(semanticsHost);
 
+    // Allow the flutter view to be programatically focusable.
+    rootElement.setAttribute('tabindex', -1);
+
     // Rendering host (shadow root) children.
 
     final DomElement accessibilityPlaceholder = EngineSemantics

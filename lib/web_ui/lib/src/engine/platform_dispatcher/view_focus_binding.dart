@@ -33,6 +33,21 @@ final class ViewFocusBinding {
     }
   }
 
+  /// [PlatformDispatcher.requestViewFocusChange] implementation.
+  void changeViewFocus(int viewId, ui.ViewFocusState state, _) {
+    const String viewTagName = DomManager.flutterViewTagName;
+    const String viewIdAttributeName = GlobalHtmlAttributes.flutterViewIdAttributeName;
+    final DomElement? viewElement = domDocument.querySelector(
+      '$viewTagName[$viewIdAttributeName="$viewId"]'
+    );
+    if (state == ui.ViewFocusState.focused) {
+      viewElement?.focus();
+    } else {
+      viewElement?.blur();
+    }
+  }
+
+
   void _notify(ui.ViewFocusEvent event) {
     for (final ui.ViewFocusChangeCallback listener in _listeners) {
       listener(event);
