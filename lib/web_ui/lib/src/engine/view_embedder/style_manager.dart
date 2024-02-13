@@ -22,6 +22,7 @@ class StyleManager {
     required String styleId,
     required String? styleNonce,
     required String cssSelectorPrefix,
+    bool disableFocusOutline = false,
   }) {
     final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(styleNonce);
     styleElement.id = styleId;
@@ -31,6 +32,7 @@ class StyleManager {
       styleElement,
       defaultCssFont: StyleManager.defaultCssFont,
       cssSelectorPrefix: cssSelectorPrefix,
+      disableFocusOutline: disableFocusOutline,
     );
   }
 
@@ -77,6 +79,7 @@ void applyGlobalCssRulesToSheet(
   DomHTMLStyleElement styleElement, {
   String cssSelectorPrefix = '',
   required String defaultCssFont,
+  bool disableFocusOutline = false,
 }) {
   styleElement.appendText(
     // Fixes #115216 by ensuring that our parameters only affect the flt-scene-host children.
@@ -118,6 +121,14 @@ void applyGlobalCssRulesToSheet(
     '  opacity: 0;'
     '}',
   );
+
+  if (disableFocusOutline) {
+    styleElement.appendText(
+      '$cssSelectorPrefix:focus {'
+      ' outline: 0;'
+      '}'
+    );
+  }
 
   // By default on iOS, Safari would highlight the element that's being tapped
   // on using gray background. This CSS rule disables that.

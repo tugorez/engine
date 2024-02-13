@@ -56,27 +56,32 @@ final class ViewFocusBinding {
 
   int? _lastViewId;
   late final DomEventListener _focusChangeHandler = createDomEventListener((DomEvent event) {
+    print('${event.type} - ${event.target} - ${event.relatedTarget}');
+    if (event.type == _focusout && event.relatedTarget != null) {
+      return;
+    }
+
     final int? viewId = _viewId(domDocument.activeElement);
     if (viewId == _lastViewId) {
       return;
     }
 
-    final ui.ViewFocusEvent event;
+    final ui.ViewFocusEvent viewFocusEvent;
     if (viewId == null) {
-      event = ui.ViewFocusEvent(
+      viewFocusEvent = ui.ViewFocusEvent(
         viewId: _lastViewId!,
         state: ui.ViewFocusState.unfocused,
         direction: ui.ViewFocusDirection.undefined,
       );
     } else {
-      event = ui.ViewFocusEvent(
+      viewFocusEvent = ui.ViewFocusEvent(
         viewId: viewId,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.forward,
       );
     }
     _lastViewId = viewId;
-    _notify(event);
+    _notify(viewFocusEvent);
   });
 
   static int? _viewId(DomElement? element) {

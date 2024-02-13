@@ -122,7 +122,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     // Android).
     // Otherwise, the keyboard stays on screen even when the user navigates to
     // a different screen (e.g. by hitting the "back" button).
-    domElement?.blur();
+    domElement?.closest('flutter-view')?.focus();
     domElement = null;
     activeTextField = null;
     _queuedStyle = null;
@@ -450,7 +450,7 @@ class TextField extends PrimaryRoleManager {
           SemanticsTextEditingStrategy._instance?.deactivate(this);
           // Only apply text, because this node is not focused.
         }
-        activeEditableElement.blur();
+        activeEditableElement.closest('flutter-view')?.focus();
       }
     }
 
