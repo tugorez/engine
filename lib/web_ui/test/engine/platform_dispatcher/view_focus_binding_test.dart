@@ -24,9 +24,7 @@ void testMain() {
       final List<ui.ViewFocusEvent> viewFocusEvents = <ui.ViewFocusEvent>[];
       final DomElement div = createDomElement('div');
       final EngineFlutterView view = EngineFlutterView(platformDispatcher, div);
-      final DomElement focusableViewElement = div
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
+      final DomElement focusableViewElement = div.querySelector(DomManager.flutterViewTagName)!;
 
       platformDispatcher.onViewFocusChange = viewFocusEvents.add;
       domDocument.body!.append(div);
@@ -43,9 +41,7 @@ void testMain() {
       final List<ui.ViewFocusEvent> viewFocusEvents = <ui.ViewFocusEvent>[];
       final DomElement div = createDomElement('div');
       final EngineFlutterView view = EngineFlutterView(platformDispatcher, div);
-      final DomElement focusableViewElement = div
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
+      final DomElement focusableViewElement = div.querySelector(DomManager.flutterViewTagName)!;
 
       platformDispatcher.onViewFocusChange = viewFocusEvents.add;
       domDocument.body!.append(div);
@@ -67,16 +63,10 @@ void testMain() {
       final List<ui.ViewFocusEvent> viewFocusEvents = <ui.ViewFocusEvent>[];
       final DomElement div1 = createDomElement('div');
       final DomElement div2 = createDomElement('div');
-      final EngineFlutterView view1 =
-          EngineFlutterView(platformDispatcher, div1);
-      final EngineFlutterView view2 =
-          EngineFlutterView(platformDispatcher, div2);
-      final DomElement focusableViewElement1 = div1
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
-      final DomElement focusableViewElement2 = div2
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
+      final EngineFlutterView view1 = EngineFlutterView(platformDispatcher, div1);
+      final EngineFlutterView view2 = EngineFlutterView(platformDispatcher, div2);
+      final DomElement focusableViewElement1 = div1.querySelector(DomManager.flutterViewTagName)!;
+      final DomElement focusableViewElement2 = div2.querySelector(DomManager.flutterViewTagName)!;
 
       domDocument.body!.append(div1);
       domDocument.body!.append(div2);
@@ -105,16 +95,10 @@ void testMain() {
       final List<ui.ViewFocusEvent> viewFocusEvents = <ui.ViewFocusEvent>[];
       final DomElement div1 = createDomElement('div');
       final DomElement div2 = createDomElement('div');
-      final EngineFlutterView view1 =
-          EngineFlutterView(platformDispatcher, div1);
-      final EngineFlutterView view2 =
-          EngineFlutterView(platformDispatcher, div2);
-      final DomElement focusableViewElement1 = div1
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
-      final DomElement focusableViewElement2 = div2
-          .querySelector(DomManager.flutterViewTagName)!
-        ..setAttribute('tabindex', 0);
+      final EngineFlutterView view1 = EngineFlutterView(platformDispatcher, div1);
+      final EngineFlutterView view2 = EngineFlutterView(platformDispatcher, div2);
+      final DomElement focusableViewElement1 = div1.querySelector(DomManager.flutterViewTagName)!;
+      final DomElement focusableViewElement2 = div2.querySelector(DomManager.flutterViewTagName)!;
 
       domDocument.body!.append(div1);
       domDocument.body!.append(div2);
@@ -142,6 +126,51 @@ void testMain() {
       expect(viewFocusEvents[3].viewId, view2.viewId);
       expect(viewFocusEvents[3].state, ui.ViewFocusState.unfocused);
       expect(viewFocusEvents[3].direction, ui.ViewFocusDirection.undefined);
+    });
+
+    test('changes the view focus when requested', () {
+      final List<ui.ViewFocusEvent> viewFocusEvents = <ui.ViewFocusEvent>[];
+      final DomElement div1 = createDomElement('div');
+      final DomElement div2 = createDomElement('div');
+      final EngineFlutterView view1 = EngineFlutterView(platformDispatcher, div1);
+      final EngineFlutterView view2 = EngineFlutterView(platformDispatcher, div2);
+
+      div1.querySelector(DomManager.flutterViewTagName)!;
+      div2.querySelector(DomManager.flutterViewTagName)!;
+
+      domDocument.body!.append(div1);
+      domDocument.body!.append(div2);
+
+      platformDispatcher.onViewFocusChange = viewFocusEvents.add;
+      platformDispatcher.requestViewFocusChange(
+        viewId: view1.viewId,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.forward,
+      );
+      platformDispatcher.requestViewFocusChange(
+        viewId: view1.viewId,
+        state: ui.ViewFocusState.unfocused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+      platformDispatcher.requestViewFocusChange(
+        viewId: view2.viewId,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.forward,
+      );
+
+      expect(viewFocusEvents, hasLength(3));
+
+      expect(viewFocusEvents[0].viewId, view1.viewId);
+      expect(viewFocusEvents[0].state, ui.ViewFocusState.focused);
+      expect(viewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+
+      expect(viewFocusEvents[1].viewId, view1.viewId);
+      expect(viewFocusEvents[1].state, ui.ViewFocusState.unfocused);
+      expect(viewFocusEvents[1].direction, ui.ViewFocusDirection.undefined);
+
+      expect(viewFocusEvents[2].viewId, view2.viewId);
+      expect(viewFocusEvents[2].state, ui.ViewFocusState.focused);
+      expect(viewFocusEvents[2].direction, ui.ViewFocusDirection.forward);
     });
   });
 }

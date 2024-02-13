@@ -239,16 +239,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     );
   }
 
-
   @override
   void requestViewFocusChange({
     required int viewId,
     required ui.ViewFocusState state,
     required ui.ViewFocusDirection direction,
   }) {
-    // TODO(tugorez): implement this method. At the moment will be a no op call.
+    ViewFocusBinding.instance.changeViewFocus(viewId, state, direction);
   }
-
 
   /// A set of views which have rendered in the current `onBeginFrame` or
   /// `onDrawFrame` scope.

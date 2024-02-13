@@ -33,6 +33,21 @@ final class ViewFocusBinding {
     }
   }
 
+  /// [PlatformDispatcher.requestViewFocusChange] implementation.
+  void changeViewFocus(int viewId, ui.ViewFocusState state, _) {
+    const String viewTagName = DomManager.flutterViewTagName;
+    const String viewIdAttributeName = GlobalHtmlAttributes.flutterViewIdAttributeName;
+    final DomElement? viewElement = domDocument.querySelector(
+      '$viewTagName[$viewIdAttributeName="$viewId"]'
+    );
+    if (state == ui.ViewFocusState.focused) {
+      viewElement?.focus();
+    } else {
+      viewElement?.blur();
+    }
+  }
+
+
   void _notify(ui.ViewFocusEvent event) {
     for (final ui.ViewFocusChangeCallback listener in _listeners) {
       listener(event);
@@ -41,27 +56,32 @@ final class ViewFocusBinding {
 
   int? _lastViewId;
   late final DomEventListener _focusChangeHandler = createDomEventListener((DomEvent event) {
+    print('${event.type} - ${event.target} - ${event.relatedTarget}');
+    if (event.type == _focusout && event.relatedTarget != null) {
+      return;
+    }
+
     final int? viewId = _viewId(domDocument.activeElement);
     if (viewId == _lastViewId) {
       return;
     }
 
-    final ui.ViewFocusEvent event;
+    final ui.ViewFocusEvent viewFocusEvent;
     if (viewId == null) {
-      event = ui.ViewFocusEvent(
+      viewFocusEvent = ui.ViewFocusEvent(
         viewId: _lastViewId!,
         state: ui.ViewFocusState.unfocused,
         direction: ui.ViewFocusDirection.undefined,
       );
     } else {
-      event = ui.ViewFocusEvent(
+      viewFocusEvent = ui.ViewFocusEvent(
         viewId: viewId,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.forward,
       );
     }
     _lastViewId = viewId;
-    _notify(event);
+    _notify(viewFocusEvent);
   });
 
   static int? _viewId(DomElement? element) {

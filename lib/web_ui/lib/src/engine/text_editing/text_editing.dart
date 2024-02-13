@@ -1372,7 +1372,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     if (_appendedToForm &&
         inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
-      activeDomElement.blur();
+      activeDomElement.blur();//closest('flutter-view')?.focus();
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
