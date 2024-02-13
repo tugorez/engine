@@ -414,6 +414,7 @@ class DomEvent {}
 extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
   external DomEventTarget? get currentTarget;
+  external DomEventTarget? get relatedTarget;
 
   @JS('timeStamp')
   external JSNumber? get _timeStamp;
@@ -704,6 +705,9 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  @JS('compareDocumentPosition')
+  external JSNumber compareDocumentPosition(DomNode node);
 }
 
 @JS()

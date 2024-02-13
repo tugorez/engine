@@ -97,6 +97,43 @@ base class EngineFlutterView implements ui.FlutterView {
   /// Whether this [EngineFlutterView] has been disposed or not.
   bool isDisposed = false;
 
+  @override
+  late final Stream<ui.FocusStateChange> onFocusStateChange =
+    _onFocusStateChangeController.stream;
+
+  @override
+  ui.FocusState focusState = ui.FocusState(
+    isFocused: false,
+    direction: ui.FocusDirection.unknown,
+  );
+
+  final StreamController<ui.FocusStateChange> _onFocusStateChangeController =
+    StreamController<ui.FocusStateChange>();
+
+  // True means backwards.
+  void markAsFocused({ bool direction = true}) =>
+    _updateState(
+      ui.FocusState(
+        isFocused: true,
+        direction: direction ? ui.FocusDirection.backwards : ui.FocusDirection.forward,
+      ),
+    );
+
+  void markAsUnfocused() =>
+    _updateState(
+      ui.FocusState(isFocused: false, direction: ui.FocusDirection.unknown),
+    );
+
+  void _updateState(ui.FocusState newState) {
+    _onFocusStateChangeController.add(
+      ui.FocusStateChange(
+        previousState: focusState,
+        currentState: newState,
+      ),
+    );
+  }
+
+
   /// Disposes of the [EngineFlutterView] instance and undoes all of its DOM
   /// tree and any event listeners.
   @mustCallSuper

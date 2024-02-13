@@ -26,6 +26,10 @@ abstract class FlutterView {
   Display get display;
   void render(Scene scene, {Size? size});
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+
+  // Focus
+  FocusState get focusState;
+  Stream<FocusStateChange> get onFocusStateChange;
 }
 
 abstract class SingletonFlutterWindow extends FlutterView {
