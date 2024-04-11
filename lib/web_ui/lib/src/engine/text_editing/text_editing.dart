@@ -336,6 +336,7 @@ class EngineAutofillForm {
     _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
+    submitButton.tabIndex = -1;
 
     formElement.append(submitButton);
 
@@ -1248,6 +1249,14 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     return domElement!;
   }
 
+
+  /// Retrieves the [FlutterView] in which [activeDomElement] is contained.
+  EngineFlutterView get activeDomElementFlutterView => _flutterViewForElement(activeDomElement)!;
+
+  EngineFlutterView? _flutterViewForElement(DomElement? element) => element == null
+    ? null
+    : EnginePlatformDispatcher.instance.viewManager.findViewForElement(element);
+
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
@@ -1285,7 +1294,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }) {
     assert(!isEnabled);
 
-    domElement = inputConfig.inputType.createDomElement();
+    domElement = inputConfig.inputType.createDomElement()..tabIndex = -1;
     applyConfiguration(inputConfig);
 
     _setStaticStyleAttributes(activeDomElement);
@@ -1370,8 +1379,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
+      event as DomFocusEvent;
+
+      final DomElement? relatedTarget = event.relatedTarget as DomElement?;
+      final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+      // Only claim focus back if focus was moved to within the view.
+      if (relatedTargetFlutterView == activeDomElementFlutterView) {
+        activeDomElement.focus();
+      }
+    }));
 
     preventDefaultForMouseEvents();
   }
@@ -1423,7 +1440,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     if (_appendedToForm &&
         inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
-      activeDomElement.blur();
+      if (activeDomElement == domDocument.activeElement) {
+        // Do not blur, sent the focus to the <flutter-view /> instead.
+        activeDomElementFlutterView.dom.rootElement.focus();
+      }
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
@@ -1704,15 +1724,18 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    In order to detect this, we measure how much time has passed since the
     //    input field was activated. If the time is too short, we re-focus the
     //    input element.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) {
-              final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-              if (windowHasFocus && isFastCallback) {
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
+      event as DomFocusEvent;
+
+      final DomElement? relatedTarget = event.relatedTarget as DomElement?;
+      final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+      final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
+      if (windowHasFocus && isFastCallback && relatedTargetFlutterView == activeDomElementFlutterView) {
+        activeDomElement.focus();
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      }
+    }));
   }
 
   @override
@@ -1829,19 +1852,22 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     addCompositionEventHandlers(activeDomElement);
 
-    subscriptions.add(
-        DomSubscription(activeDomElement, 'blur',
-            (_) {
-              if (windowHasFocus) {
-                // Chrome on Android will hide the onscreen keyboard when you tap outside
-                // the text box. Instead, we want the framework to tell us to hide the
-                // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-                // refocus as long as [windowHasFocus] is true.
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
+      event as DomFocusEvent;
+
+      final DomElement? relatedTarget = event.relatedTarget as DomElement?;
+      final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+
+      if (windowHasFocus && relatedTargetFlutterView == activeDomElementFlutterView) {
+        // Chrome on Android will hide the onscreen keyboard when you tap outside
+        // the text box. Instead, we want the framework to tell us to hide the
+        // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
+        // refocus as long as [windowHasFocus] is true.
+        activeDomElement.focus();
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      }
+    }));
 
     preventDefaultForMouseEvents();
   }
@@ -1923,25 +1949,23 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
-    subscriptions.add(
-        DomSubscription(
-            activeDomElement,
-            'blur',
-            (_) {
-              _postponeFocus();
-            }));
+    subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
+      event as DomFocusEvent;
+
+      final DomElement? relatedTarget = event.relatedTarget as DomElement?;
+      final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+      if (relatedTargetFlutterView == activeDomElementFlutterView) {
+        // Firefox does not focus on the editing element if we call the focus
+        // inside the blur event, therefore we postpone the focus.
+        // Calling focus inside a Timer for `0` milliseconds guarantee that it is
+        // called after blur event propagation is completed.
+        Timer(Duration.zero, () {
+          activeDomElement.focus();
+        });
+      }
+    }));
 
     preventDefaultForMouseEvents();
-  }
-
-  void _postponeFocus() {
-    // Firefox does not focus on the editing element if we call the focus
-    // inside the blur event, therefore we postpone the focus.
-    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
-    // called after blur event propagation is completed.
-    Timer(Duration.zero, () {
-      activeDomElement.focus();
-    });
   }
 
   @override
