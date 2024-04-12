@@ -1384,9 +1384,12 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+
       // Only claim focus back if focus was moved to within the view.
       if (relatedTargetFlutterView == activeDomElementFlutterView) {
         activeDomElement.focus();
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
       }
     }));
 
@@ -1730,6 +1733,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
       final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
+
       if (windowHasFocus && isFastCallback && relatedTargetFlutterView == activeDomElementFlutterView) {
         activeDomElement.focus();
       } else {
@@ -1954,6 +1958,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
+
       if (relatedTargetFlutterView == activeDomElementFlutterView) {
         // Firefox does not focus on the editing element if we call the focus
         // inside the blur event, therefore we postpone the focus.
@@ -1962,6 +1967,8 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         Timer(Duration.zero, () {
           activeDomElement.focus();
         });
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
       }
     }));
 
