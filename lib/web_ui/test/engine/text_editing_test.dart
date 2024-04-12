@@ -347,6 +347,7 @@ Future<void> testMain() async {
       checkTextAreaEditingState(textarea, 'bar\nbaz', 2, 7);
 
       editingStrategy!.disable();
+
       // The textarea should be cleaned up.
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 

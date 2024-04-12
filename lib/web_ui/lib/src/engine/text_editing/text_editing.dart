@@ -1434,16 +1434,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.clear();
     removeCompositionEventHandlers(activeDomElement);
 
+    // If activeDomElement is focused sent the focus to the <flutter-view />.
+    if (activeDomElement == domDocument.activeElement) {
+      // Subscriptions are removed, listeners won't be triggered.
+      activeDomElementFlutterView.dom.rootElement.focus();
+    }
+
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
-    if (_appendedToForm &&
-        inputConfiguration.autofillGroup?.formElement != null) {
-      // Subscriptions are removed, listeners won't be triggered.
-      if (activeDomElement == domDocument.activeElement) {
-        // Do not blur, sent the focus to the <flutter-view /> instead.
-        activeDomElementFlutterView.dom.rootElement.focus();
-      }
+    if (_appendedToForm && inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
