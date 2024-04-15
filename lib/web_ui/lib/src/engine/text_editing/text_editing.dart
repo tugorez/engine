@@ -1380,12 +1380,13 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
-      event as DomFocusEvent;
+      if (!windowHasFocus) {
+        return;
+      }
 
+      event as DomFocusEvent;
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
-
-      // Only claim focus back if focus was moved to within the view.
       if (relatedTargetFlutterView == activeDomElementFlutterView) {
         activeDomElement.focus();
       } else {
@@ -1728,13 +1729,15 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    input field was activated. If the time is too short, we re-focus the
     //    input element.
     subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
-      event as DomFocusEvent;
+      if (!windowHasFocus) {
+        return;
+      }
 
+      event as DomFocusEvent;
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
       final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-
-      if (windowHasFocus && isFastCallback && relatedTargetFlutterView == activeDomElementFlutterView) {
+      if (isFastCallback && relatedTargetFlutterView == activeDomElementFlutterView) {
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
@@ -1857,12 +1860,14 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     addCompositionEventHandlers(activeDomElement);
 
     subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
-      event as DomFocusEvent;
+      if (!windowHasFocus) {
+        return;
+      }
 
+      event as DomFocusEvent;
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
-
-      if (windowHasFocus && relatedTargetFlutterView == activeDomElementFlutterView) {
+      if (relatedTargetFlutterView == activeDomElementFlutterView) {
         // Chrome on Android will hide the onscreen keyboard when you tap outside
         // the text box. Instead, we want the framework to tell us to hide the
         // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
@@ -1954,11 +1959,13 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(DomSubscription(activeDomElement, 'blur', (DomEvent event) {
-      event as DomFocusEvent;
+      if (!windowHasFocus) {
+        return;
+      }
 
+      event as DomFocusEvent;
       final DomElement? relatedTarget = event.relatedTarget as DomElement?;
       final EngineFlutterView? relatedTargetFlutterView = _flutterViewForElement(relatedTarget);
-
       if (relatedTargetFlutterView == activeDomElementFlutterView) {
         // Firefox does not focus on the editing element if we call the focus
         // inside the blur event, therefore we postpone the focus.
