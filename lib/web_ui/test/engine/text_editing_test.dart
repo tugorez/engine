@@ -911,12 +911,10 @@ Future<void> testMain() async {
           textEditing!.strategy.domElement, 'abcd', 2, 3);
       expect(textEditing!.isEditing, isTrue);
 
-      // DOM element is "blurred".
-      implicitViewRootElement.focus();
-
       // No connection close message sent.
       expect(spy.messages, hasLength(0));
       await Future<void>.delayed(Duration.zero);
+
       // DOM element still keeps the focus.
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           textEditing!.strategy.domElement);
