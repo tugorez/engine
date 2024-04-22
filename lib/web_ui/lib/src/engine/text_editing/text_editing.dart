@@ -1132,7 +1132,10 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
-      activeDomElement.focus();
+
+      Timer(Duration.zero, () {
+        activeDomElement.focus();
+      });
     }
   }
 }
@@ -1452,7 +1455,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void placeElement() {
-    activeDomElement.focus();
+    Timer(Duration.zero, () {
+      activeDomElement.focus();
+    });
   }
 
   void placeForm() {
@@ -1554,8 +1559,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       setEditingState(lastEditingState);
     }
 
-    // Re-focuses after setting editing state.
-    activeDomElement.focus();
+    Timer(Duration.zero, () {
+      // Re-focuses after setting editing state.
+      activeDomElement.focus();
+    });
   }
 
   /// Prevent default behavior for mouse down, up and move.
