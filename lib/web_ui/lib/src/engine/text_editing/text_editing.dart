@@ -1126,18 +1126,6 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
       lastEditingState?.applyToDomElement(domElement);
-      // On Chrome, when a form is focused, it opens an autofill menu
-      // immediately.
-      // Flutter framework sends `setEditableSizeAndTransform` for informing
-      // the engine about the location of the text field. This call will
-      // arrive after `show` call.
-      // Therefore on Chrome we place the element when
-      //  `setEditableSizeAndTransform` method is called and focus on the form
-      // only after placing it to the correct position. Hence autofill menu
-      // does not appear on top-left of the page.
-      // Refocus on the elements after applying the geometry.
-      focusedFormElement!.focus();
-      activeDomElement.focus();
     }
   }
 }
@@ -1410,6 +1398,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
   }
 
+
   @override
   void disable() {
     assert(isEnabled);
@@ -1556,8 +1545,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       setEditingState(lastEditingState);
     }
 
-    // Re-focuses after setting editing state.
-    activeDomElement.focus();
+    //tugorez
+    Timer(Duration.zero, () {
+      activeDomElement.focus();
+    });
   }
 
   /// Prevent default behavior for mouse down, up and move.
