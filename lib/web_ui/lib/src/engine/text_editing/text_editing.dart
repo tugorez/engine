@@ -332,7 +332,8 @@ class EngineAutofillForm {
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
-    final DomHTMLInputElement submitButton = createDomHTMLInputElement();
+    // The -1 tab index value makes this element not reachable by keyboard (neither tab nor shift + tab).
+    final DomHTMLInputElement submitButton = createDomHTMLInputElement()..tabIndex = -1;
     _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
@@ -1248,6 +1249,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     return domElement!;
   }
 
+  /// Retrieves the [FlutterView] in which [activeDomElement] is contained.
+  EngineFlutterView get activeDomElementFlutterView =>
+    EnginePlatformDispatcher.instance.viewManager.findViewForElement(activeDomElement)!;
+
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
@@ -1285,7 +1290,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }) {
     assert(!isEnabled);
 
-    domElement = inputConfig.inputType.createDomElement();
+    // The -1 tab index value makes this element not reachable by keyboard (neither tab nor shift + tab).
+    domElement = inputConfig.inputType.createDomElement()..tabIndex = -1;
     applyConfiguration(inputConfig);
 
     _setStaticStyleAttributes(activeDomElement);
@@ -1417,13 +1423,17 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.clear();
     removeCompositionEventHandlers(activeDomElement);
 
+    // Active dom element is about to lose focus, move focus to the parent <flutter-view />.
+    if (activeDomElement == domDocument.activeElement) {
+      // Subscriptions are removed, listeners won't be triggered.
+      activeDomElementFlutterView.dom.rootElement.focus();
+    }
+
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
     if (_appendedToForm &&
         inputConfiguration.autofillGroup?.formElement != null) {
-      // Subscriptions are removed, listeners won't be triggered.
-      activeDomElement.blur();
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
