@@ -1134,7 +1134,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       focusedFormElement!.focus();
 
       Timer(Duration.zero, () {
-        activeDomElement.focus();
+        domElement?.focus();
       });
     }
   }
@@ -1377,11 +1377,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     addCompositionEventHandlers(activeDomElement);
 
-    // Refocus on the activeDomElement after blur, so that user can keep editing the
-    // text field.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
-
     preventDefaultForMouseEvents();
   }
 
@@ -1456,7 +1451,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   void placeElement() {
     Timer(Duration.zero, () {
-      activeDomElement.focus();
+      domElement?.focus();
     });
   }
 
@@ -1561,7 +1556,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     Timer(Duration.zero, () {
       // Re-focuses after setting editing state.
-      activeDomElement.focus();
+      domElement?.focus();
     });
   }
 
@@ -1957,7 +1952,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
     Timer(Duration.zero, () {
-      activeDomElement.focus();
+      domElement?.focus();
     });
   }
 

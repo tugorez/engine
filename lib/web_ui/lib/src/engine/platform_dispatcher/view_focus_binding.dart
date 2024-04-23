@@ -54,7 +54,7 @@ final class ViewFocusBinding {
 
   late final DomEventListener _handleFocusout = createDomEventListener((DomEvent event) {
     event as DomFocusEvent;
-    _handleFocusChange(event.relatedTarget as DomElement?);
+    _handleFocusChange((event.relatedTarget as DomElement?) ?? domDocument.activeElement);
   });
 
   late final DomEventListener _handleKeyDown = createDomEventListener((DomEvent event) {
