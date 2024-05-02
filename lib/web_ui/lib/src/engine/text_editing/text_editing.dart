@@ -1131,8 +1131,8 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // only after placing it to the correct position. Hence autofill menu
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
-      focusedFormElement!.focus();
-      activeDomElement.focus();
+      focusedFormElement!.focus(preventScroll: true);
+      activeDomElement.focus(preventScroll: true);
     }
   }
 }
@@ -1158,7 +1158,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   ///
   /// This method is similar to the [GloballyPositionedTextEditingStrategy].
   /// The only part different: this method does not call `super.placeElement()`,
-  /// which in current state calls `domElement.focus()`.
+  /// which in current state calls `domElement.focus(preventScroll: true)`.
   ///
   /// Making an extra `focus` request causes flickering in Safari.
   @override
@@ -1185,13 +1185,13 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
         // `setEditableSizeAndTransform` method is called and focus called on the
         // form only after placing it to the correct position and only once after
         // that. Calling focus multiple times causes flickering.
-        focusedFormElement!.focus();
+        focusedFormElement!.focus(preventScroll: true);
 
         // Set the last editing state if it exists, this is critical for a
         // users ongoing work to continue uninterrupted when there is an update to
         // the transform.
         // If domElement is not focused cursor location will not be correct.
-        activeDomElement.focus();
+        activeDomElement.focus(preventScroll: true);
         lastEditingState?.applyToDomElement(activeDomElement);
       });
     }
@@ -1202,7 +1202,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     if (geometry != null) {
       placeElement();
     }
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 }
 
@@ -1373,7 +1373,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
+            (_) { activeDomElement.focus(preventScroll: true); }));
 
     preventDefaultForMouseEvents();
   }
@@ -1443,7 +1443,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 
   void placeForm() {
@@ -1546,7 +1546,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
 
     // Re-focuses after setting editing state.
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 
   /// Prevent default behavior for mouse down, up and move.
@@ -1583,7 +1583,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         .findViewForElement(activeDomElement)!
         .dom
         .rootElement
-        .focus();
+        .focus(preventScroll: true);
     }
   }
 }
@@ -1722,7 +1722,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
             (_) {
               final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
               if (windowHasFocus && isFastCallback) {
-                activeDomElement.focus();
+                activeDomElement.focus(preventScroll: true);
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
@@ -1786,7 +1786,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1851,7 +1851,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
                 // the text box. Instead, we want the framework to tell us to hide the
                 // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
                 // refocus as long as [windowHasFocus] is true.
-                activeDomElement.focus();
+                activeDomElement.focus(preventScroll: true);
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
@@ -1862,7 +1862,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1954,13 +1954,13 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
     Timer(Duration.zero, () {
-      activeDomElement.focus();
+      activeDomElement.focus(preventScroll: true);
     });
   }
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to

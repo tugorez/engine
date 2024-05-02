@@ -35,16 +35,18 @@ final class ViewFocusBinding {
   }
 
   void changeViewFocus(int viewId, ui.ViewFocusState state) {
-    final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
+    Timer(Duration.zero, () {
+      final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
 
-    if (state == ui.ViewFocusState.focused) {
-      // Only move the focus to the flutter view if nothing inside it is focused already.
-      if (viewId != _viewId(domDocument.activeElement)) {
-        viewElement?.focus();
+      if (state == ui.ViewFocusState.focused) {
+        // Only move the focus to the flutter view if nothing inside it is focused already.
+        if (viewId != _viewId(domDocument.activeElement)) {
+          viewElement?.focus(preventScroll: true);
+        }
+      } else {
+        viewElement?.blur();
       }
-    } else {
-      viewElement?.blur();
-    }
+    });
   }
 
   late final DomEventListener _handleFocusin = createDomEventListener((DomEvent event) {
