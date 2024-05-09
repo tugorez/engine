@@ -958,7 +958,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   void _requestViewFocus() {
     Timer(Duration.zero, () {
       EnginePlatformDispatcher.instance.requestViewFocusChange(
-        viewId: view.viewId,
+        viewId: _view.viewId,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.undefined,
       );
