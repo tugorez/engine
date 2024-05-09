@@ -1132,7 +1132,6 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
-      activeDomElement.focus();
     }
   }
 }
@@ -1165,35 +1164,8 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      // We listen to pointerdown events on the Flutter View element and programatically
-      // focus our inputs. However, these inputs are focused before the pointerdown
-      // events conclude. Thus, the browser triggers a blur event immediately after
-      // focusing these inputs. This causes issues with Safari Desktop's autofill
-      // dialog (ref: https://github.com/flutter/flutter/issues/127960).
-      // In order to guarantee that we only focus after the pointerdown event concludes,
-      // we wrap the form autofill placement and focus logic in a zero-duration Timer.
-      // This ensures that our input doesn't have instantaneous focus/blur events
-      // occur on it and fixes the autofill dialog bug as a result.
-      Timer(Duration.zero, () {
-        placeForm();
-        // On Safari Desktop, when a form is focused, it opens an autofill menu
-        // immediately.
-        // Flutter framework sends `setEditableSizeAndTransform` for informing
-        // the engine about the location of the text field. This call may arrive
-        // after the first `show` call, depending on the text input widget's
-        // implementation. Therefore form is placed, when
-        // `setEditableSizeAndTransform` method is called and focus called on the
-        // form only after placing it to the correct position and only once after
-        // that. Calling focus multiple times causes flickering.
-        focusedFormElement!.focus();
-
-        // Set the last editing state if it exists, this is critical for a
-        // users ongoing work to continue uninterrupted when there is an update to
-        // the transform.
-        // If domElement is not focused cursor location will not be correct.
-        activeDomElement.focus();
-        lastEditingState?.applyToDomElement(activeDomElement);
-      });
+      placeForm();
+      lastEditingState?.applyToDomElement(activeDomElement);
     }
   }
 
@@ -1202,7 +1174,6 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     if (geometry != null) {
       placeElement();
     }
-    activeDomElement.focus();
   }
 }
 
@@ -1378,15 +1349,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+            handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
-
-    // Refocus on the activeDomElement after blur, so that user can keep editing the
-    // text field.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
 
     preventDefaultForMouseEvents();
   }
@@ -1431,7 +1397,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
     subscriptions.clear();
     removeCompositionEventHandlers(activeDomElement);
-    _moveFocusToFlutterView();
 
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
@@ -1440,10 +1405,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
-    } else {
-      activeDomElement.remove();
     }
-    domElement = null;
+    _moveFocusToFlutterView();
   }
 
   @override
@@ -1455,9 +1418,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     lastEditingState!.applyToDomElement(domElement);
   }
 
-  void placeElement() {
-    activeDomElement.focus();
-  }
+  void placeElement() {}
 
   void placeForm() {
     inputConfiguration.autofillGroup!.placeForm(activeDomElement);
@@ -1589,9 +1550,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Moves the focus to the parent [EngineFlutterView].
   void _moveFocusToFlutterView() {
-    if (activeDomElement == domDocument.activeElement) {
-      activeDomElementView.dom.rootElement.focus(preventScroll: true);
-    }
+    final DomElement element = activeDomElement;
+    final EngineFlutterView view = activeDomElementView;
+    domElement = null;
+
+    Timer(Duration.zero, () {
+      if (element == domDocument.activeElement) {
+        view.dom.rootElement.focus(preventScroll: true);
+      }
+      element.remove();
+    });
   }
 }
 
@@ -1692,8 +1660,8 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+            handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1705,35 +1673,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
             }));
 
     _addTapListener();
-
-    // Record start time of blur subscription.
-    final Stopwatch blurWatch = Stopwatch()..start();
-
-    // On iOS, blur is trigerred in the following cases:
-    //
-    // 1. The browser app is sent to the background (or the tab is changed). In
-    //    this case, the window loses focus (see [windowHasFocus]),
-    //    so we close the input connection with the framework.
-    // 2. The user taps on another focusable element. In this case, we refocus
-    //    the input field and wait for the framework to manage the focus change.
-    // 3. The virtual keyboard is closed by tapping "done". We can't detect this
-    //    programmatically, so we end up refocusing the input field. This is
-    //    okay because the virtual keyboard will hide, and as soon as the user
-    //    taps the text field again, the virtual keyboard will come up.
-    // 4. Safari sometimes sends a blur event immediately after activating the
-    //    input field. In this case, we want to keep the focus on the input field.
-    //    In order to detect this, we measure how much time has passed since the
-    //    input field was activated. If the time is too short, we re-focus the
-    //    input element.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) {
-              final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-              if (windowHasFocus && isFastCallback) {
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
   }
 
   @override
@@ -1793,7 +1732,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus();
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1845,31 +1783,17 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+            handleBeforeInput));
+
 
     addCompositionEventHandlers(activeDomElement);
-
-    subscriptions.add(
-        DomSubscription(activeDomElement, 'blur',
-            (_) {
-              if (windowHasFocus) {
-                // Chrome on Android will hide the onscreen keyboard when you tap outside
-                // the text box. Instead, we want the framework to tell us to hide the
-                // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-                // refocus as long as [windowHasFocus] is true.
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
 
     preventDefaultForMouseEvents();
   }
 
   @override
   void placeElement() {
-    activeDomElement.focus();
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1906,11 +1830,11 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(activeDomElement, 'input', handleChange));
 
     subscriptions.add(
-        DomSubscription(
-            activeDomElement, 'keydown', maybeSendAction));
+        DomSubscription(activeDomElement, 'keydown', maybeSendAction));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
+
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1942,32 +1866,11 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(
             activeDomElement, 'select', handleChange));
 
-    // Refocus on the activeDomElement after blur, so that user can keep editing the
-    // text field.
-    subscriptions.add(
-        DomSubscription(
-            activeDomElement,
-            'blur',
-            (_) {
-              _postponeFocus();
-            }));
-
     preventDefaultForMouseEvents();
-  }
-
-  void _postponeFocus() {
-    // Firefox does not focus on the editing element if we call the focus
-    // inside the blur event, therefore we postpone the focus.
-    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
-    // called after blur event propagation is completed.
-    Timer(Duration.zero, () {
-      activeDomElement.focus();
-    });
   }
 
   @override
   void placeElement() {
-    activeDomElement.focus();
     geometry?.applyToDomElement(activeDomElement);
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to

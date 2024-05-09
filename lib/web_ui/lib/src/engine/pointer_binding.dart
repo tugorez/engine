@@ -955,16 +955,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     );
   }
 
-  void _requestViewFocus() {
-    Timer(Duration.zero, () {
-      EnginePlatformDispatcher.instance.requestViewFocusChange(
-        viewId: _view.viewId,
-        state: ui.ViewFocusState.focused,
-        direction: ui.ViewFocusDirection.undefined,
-      );
-    });
-  }
-
   @override
   void setup() {
     _addPointerEventListener(_viewTarget, 'pointerdown', (DomPointerEvent event) {
@@ -983,10 +973,16 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
-
       if (event.target == _viewTarget) {
         event.preventDefault();
-        _requestViewFocus();
+
+        Timer(Duration.zero, () {
+          EnginePlatformDispatcher.instance.requestViewFocusChange(
+            viewId: _view.viewId,
+            state: ui.ViewFocusState.focused,
+            direction: ui.ViewFocusDirection.undefined,
+          );
+        });
       }
     });
 
