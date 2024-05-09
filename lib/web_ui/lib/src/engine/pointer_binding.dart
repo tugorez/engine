@@ -955,6 +955,16 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     );
   }
 
+  void _requestViewFocus() {
+    Timer(Duration.zero, () {
+      EnginePlatformDispatcher.instance.requestViewFocusChange(
+        viewId: view.viewId,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+    });
+  }
+
   @override
   void setup() {
     _addPointerEventListener(_viewTarget, 'pointerdown', (DomPointerEvent event) {
@@ -973,6 +983,11 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
+
+      if (event.target == _viewTarget) {
+        event.preventDefault();
+        _requestViewFocus();
+      }
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
