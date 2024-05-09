@@ -1132,7 +1132,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
-      activeDomElement.focus();
+      activeDomElement.focus(preventScroll: true);
     }
   }
 }
@@ -1191,7 +1191,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
         // users ongoing work to continue uninterrupted when there is an update to
         // the transform.
         // If domElement is not focused cursor location will not be correct.
-        activeDomElement.focus();
+        activeDomElement.focus(preventScroll: true);
         lastEditingState?.applyToDomElement(activeDomElement);
       });
     }
@@ -1202,7 +1202,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     if (geometry != null) {
       placeElement();
     }
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 }
 
@@ -1386,7 +1386,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
+            (_) { activeDomElement.focus(preventScroll: true); }));
 
     preventDefaultForMouseEvents();
   }
@@ -1456,7 +1456,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 
   void placeForm() {
@@ -1559,7 +1559,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
 
     // Re-focuses after setting editing state.
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
   }
 
   /// Prevent default behavior for mouse down, up and move.
@@ -1729,7 +1729,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
             (_) {
               final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
               if (windowHasFocus && isFastCallback) {
-                activeDomElement.focus();
+                activeDomElement.focus(preventScroll: true);
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
@@ -1793,7 +1793,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1858,7 +1858,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
                 // the text box. Instead, we want the framework to tell us to hide the
                 // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
                 // refocus as long as [windowHasFocus] is true.
-                activeDomElement.focus();
+                activeDomElement.focus(preventScroll: true);
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
@@ -1869,7 +1869,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1961,13 +1961,13 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Calling focus inside a Timer for `0` milliseconds guarantee that it is
     // called after blur event propagation is completed.
     Timer(Duration.zero, () {
-      activeDomElement.focus();
+      activeDomElement.focus(preventScroll: true);
     });
   }
 
   @override
   void placeElement() {
-    activeDomElement.focus();
+    activeDomElement.focus(preventScroll: true);
     geometry?.applyToDomElement(activeDomElement);
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to
